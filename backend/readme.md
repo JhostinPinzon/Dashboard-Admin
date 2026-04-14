@@ -55,4 +55,3 @@ DATABASE_URL: `postgresql://postgres:postgres@localhost:5432/dashboard_admin`
 ## Comandos Prisma
 `npx prisma studio` (UI DB)
 
-*¡Sprint 6 Backend Ready!*
