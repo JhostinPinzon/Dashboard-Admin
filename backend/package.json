@@ -15,6 +15,9 @@
     "db:push": "prisma db push",
     "lint": "eslint . --ext .ts"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "keywords": ["express", "prisma", "postgres", "admin-dashboard"],
   "author": "BLACKBOXAI + Oscar",
   "license": "MIT",

@@ -11,17 +11,34 @@ export default function Login() {
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      localStorage.setItem('userRole', 'ADMIN');
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al iniciar sesión');
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('userRole', data.user.role);
+      
       addToast('Bienvenido, Administrador', 'success');
       navigate('/admin');
+    } catch (error: any) {
+      addToast(error.message, 'error');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (

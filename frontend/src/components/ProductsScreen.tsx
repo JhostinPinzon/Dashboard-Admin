@@ -11,6 +11,7 @@ import {
   Camera
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import { useOutletContext } from 'react-router-dom';
 
@@ -23,7 +24,8 @@ export default function ProductsScreen() {
     category: 'TOP WEAR',
     price: '',
     stock: '',
-    color: ''
+    color: '',
+    imageUrl: ''
   });
 
   const filteredProducts = useMemo(() => {
@@ -36,27 +38,76 @@ export default function ProductsScreen() {
     );
   }, [products, searchQuery]);
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    const id = `VP-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-    const product = {
-      ...newProduct,
-      id,
-      image: `https://picsum.photos/seed/${id}/200/200`,
-      stock: parseInt(newProduct.stock) || 0,
-      price: `$${newProduct.price}`,
-      lowStock: (parseInt(newProduct.stock) || 0) < 10
-    };
-    setProducts([product, ...products]);
-    setShowAddModal(false);
-    setNewProduct({ name: '', category: 'TOP WEAR', price: '', stock: '', color: '' });
-    addToast('Producto añadido exitosamente', 'success');
+    try {
+      const product = await api.post('/products', {
+        ...newProduct,
+        price: parseFloat(newProduct.price),
+        stock: parseInt(newProduct.stock),
+        imageUrl: newProduct.imageUrl || `https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=300&h=400&q=80`
+      });
+      // Asegurar que el producto tenga los campos calculados que espera la UI
+      const formattedProduct = {
+        ...product,
+        lowStock: product.stock < 10,
+        color: newProduct.color || 'Negro Phantom'
+      };
+      setProducts([formattedProduct, ...products]);
+      setShowAddModal(false);
+      setNewProduct({ name: '', category: 'TOP WEAR', price: '', stock: '', color: '', imageUrl: '' });
+      addToast('Producto añadido exitosamente', 'success');
+    } catch (error) {
+      console.error('Add product error:', error);
+      addToast('Error al añadir producto', 'error');
+    }
   };
 
-  const handleDeleteProduct = (id: string) => {
-    setProducts(products.filter((p: any) => p.id !== id));
-    setSelectedProduct(null);
-    addToast('Producto eliminado', 'info');
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const product = await api.put(`/products/${selectedProduct.id}`, {
+        ...newProduct,
+        price: parseFloat(newProduct.price),
+        stock: parseInt(newProduct.stock)
+      });
+      // Asegurar que el producto actualizado tenga los campos calculados
+      const formattedProduct = {
+        ...product,
+        lowStock: product.stock < 10,
+        color: newProduct.color || 'Negro Phantom'
+      };
+      setProducts(products.map((p: any) => p.id === product.id ? formattedProduct : p));
+      setShowAddModal(false);
+      setSelectedProduct(formattedProduct);
+      addToast('Producto actualizado correctamente', 'success');
+    } catch (error) {
+      console.error('Update product error:', error);
+      addToast('Error al actualizar producto', 'error');
+    }
+  };
+
+  const openEditModal = (product: any) => {
+    setNewProduct({
+      name: product.name,
+      category: product.category,
+      price: product.price.toString(),
+      stock: product.stock.toString(),
+      color: product.color || '',
+      imageUrl: product.imageUrl || ''
+    });
+    setShowAddModal(true);
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      await api.delete(`/products/${id}`);
+      setProducts(products.filter((p: any) => p.id !== id));
+      setSelectedProduct(null);
+      addToast('Producto eliminado', 'info');
+    } catch (error) {
+      addToast('Error al eliminar producto', 'error');
+    }
   };
 
   return (
@@ -76,7 +127,10 @@ export default function ProductsScreen() {
             Filtros Avanzados
           </button>
           <button 
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setNewProduct({ name: '', category: 'TOP WEAR', price: '', stock: '', color: '', imageUrl: '' });
+              setShowAddModal(true);
+            }}
             className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-container to-primary text-on-primary font-bold rounded-lg shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
           >
             <Plus className="w-5 h-5" />
@@ -133,7 +187,7 @@ export default function ProductsScreen() {
                 >
                   <td className="px-6 py-4 text-sm font-mono text-slate-500">{product.id}</td>
                   <td className="px-6 py-4">
-                    <img src={product.image} alt={product.name} className="w-12 h-12 rounded-lg object-cover" referrerPolicy="no-referrer" />
+                    <img src={product.imageUrl} alt={product.name} className="w-12 h-12 rounded-lg object-cover" referrerPolicy="no-referrer" />
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-on-surface">{product.name}</p>
@@ -187,8 +241,10 @@ export default function ProductsScreen() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-surface-container-low w-full max-w-md rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden relative z-10 p-8"
             >
-              <h3 className="text-2xl font-bold font-headline mb-6">Nuevo Producto</h3>
-              <form onSubmit={handleAddProduct} className="space-y-4">
+              <h3 className="text-2xl font-bold font-headline mb-6">
+                {selectedProduct && newProduct.name === selectedProduct.name ? 'Editar Producto' : 'Nuevo Producto'}
+              </h3>
+              <form onSubmit={selectedProduct && newProduct.name === selectedProduct.name ? handleUpdateProduct : handleAddProduct} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre</label>
                   <input 
@@ -196,6 +252,16 @@ export default function ProductsScreen() {
                     type="text" 
                     value={newProduct.name}
                     onChange={e => setNewProduct({...newProduct, name: e.target.value})}
+                    className="w-full bg-surface-container-highest border-none rounded-lg px-4 py-2 text-sm text-on-surface outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">URL de la Imagen</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://images.unsplash.com/..."
+                    value={newProduct.imageUrl}
+                    onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})}
                     className="w-full bg-surface-container-highest border-none rounded-lg px-4 py-2 text-sm text-on-surface outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
@@ -251,7 +317,10 @@ export default function ProductsScreen() {
                 <div className="pt-6 flex gap-3">
                   <button 
                     type="button"
-                    onClick={() => setShowAddModal(false)}
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setNewProduct({ name: '', category: 'TOP WEAR', price: '', stock: '', color: '', imageUrl: '' });
+                    }}
                     className="flex-1 py-3 bg-surface-container-high text-on-surface font-bold rounded-lg hover:bg-surface-container-highest transition-all"
                   >
                     Cancelar
@@ -260,7 +329,7 @@ export default function ProductsScreen() {
                     type="submit"
                     className="flex-1 py-3 bg-gradient-to-r from-primary-container to-primary text-on-primary font-bold rounded-lg shadow-lg shadow-primary/20"
                   >
-                    Guardar
+                    {selectedProduct && newProduct.name === selectedProduct.name ? 'Actualizar' : 'Guardar'}
                   </button>
                 </div>
               </form>
@@ -295,7 +364,7 @@ export default function ProductsScreen() {
               </div>
               <div className="flex-1 overflow-y-auto p-8 space-y-8">
                 <div className="aspect-square rounded-2xl overflow-hidden bg-surface-container-highest relative group">
-                  <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer">
                     <Camera className="w-10 h-10 text-white" />
                   </div>
@@ -350,7 +419,7 @@ export default function ProductsScreen() {
                   Eliminar
                 </button>
                 <button 
-                  onClick={() => addToast('Funcionalidad de edición en desarrollo', 'info')}
+                  onClick={() => openEditModal(selectedProduct)}
                   className="py-3 px-6 bg-gradient-to-r from-primary-container to-primary text-on-primary font-bold rounded-lg shadow-lg shadow-primary/20"
                 >
                   Editar Producto

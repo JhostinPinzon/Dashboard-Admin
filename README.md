@@ -2,6 +2,34 @@
 
 Este repositorio contiene el **Sprint 5** del proyecto "Vibe Pulse", un e-commerce de ropa juvenil universitario. Esta fase se enfoca exclusivamente en el **Panel de Administración**, proporcionando una interfaz profesional para la gestión de productos, pedidos y usuarios.
 
+## 🚀 Inicio Rápido (Docker)
+
+```powershell
+# 1. Descargar imagenes y construir contenedores
+docker-compose up -d --build
+
+# 2. Esperar a que este todo arriba (bd lista)
+docker-compose ps
+
+# 3. Acceder a los servicios
+# Frontend:  http://localhost:3000
+# Backend:   http://localhost:5000
+# Studio:   http://localhost:5555
+```
+
+### Primeros pasos al descargar
+
+```powershell
+# Verificar que la base de datos este conectada
+docker exec dashboard_backend npx prisma migrate status
+
+# Si las migraciones no estan aplicadas:
+docker exec dashboard_backend npx prisma migrate dev
+
+# Si necesitas reinstallar dependencias:
+docker-compose build --no-cache
+```
+
 ## 🚀 Tecnologías (Stack Obligatorio)
 
 - **React 19 + Vite 6**
@@ -69,6 +97,41 @@ El panel cuenta con un **Route Guard** que protege la ruta `/admin/*`.
    npm run dev
    ```
 4. Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+
+## 🐳 Docker
+
+### Iniciar todos los servicios
+```powershell
+docker-compose up -d
+```
+
+### Ver logs
+```powershell
+docker-compose logs -f
+```
+
+### Detener servicios
+```powershell
+docker-compose down
+```
+
+### Comandos útiles
+
+| Servicio | Comando | Descripción |
+|----------|---------|-------------|
+| Backend | `docker exec dashboard_backend npx prisma studio` | Abrir GUI de base de datos en http://localhost:5555 |
+| Backend | `docker exec dashboard_backend npx prisma generate` | Regenerar cliente Prisma |
+| Backend | `docker exec dashboard_backend npx prisma migrate dev` | Ejecutar migraciones |
+| Backend | `docker exec dashboard_backend npx prisma migrate status` | Ver estado de migraciones |
+| Backend | `docker exec dashboard_backend npx prisma db push` | Sincronizar esquema sin migrar |
+| Backend | `docker exec dashboard_backend npm run dev` | Reiniciar servidor backend |
+
+### Puertos
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **Prisma Studio**: http://localhost:5555
+- **PostgreSQL**: localhost:5432
 
 ---
 **Nota:** El proyecto utiliza datos simulados (Mock Data) para cumplir con los requerimientos del Sprint 5 sin dependencia directa de un backend real en esta fase.

@@ -14,7 +14,7 @@ import UsersScreen from './components/UsersScreen';
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/admin" replace />,
+    element: <Navigate to="/login" replace />,
   },
   {
     path: '/login',

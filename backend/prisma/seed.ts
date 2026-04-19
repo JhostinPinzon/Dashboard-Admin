@@ -35,7 +35,13 @@ async function main() {
       price: 25 + (i % 10),
       stock: 50 - (i % 20),
       category: ['Casual', 'Deportiva', 'Formal'][i % 3],
-      imageUrl: `https://picsum.photos/300/400?random=${i}`,
+      imageUrl: `https://images.unsplash.com/photo-${[
+        '1523381210434-271e8be1f52b',
+        '1556906781-9a412961c28c',
+        '1583743814966-8936f5b7be1a',
+        '1512436991641-6745cdb1723f',
+        '1521572267360-ee0c2909d518'
+      ][i % 5]}?auto=format&fit=crop&w=300&h=400&q=80`,
     })),
     skipDuplicates: true,
   });

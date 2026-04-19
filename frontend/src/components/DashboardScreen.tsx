@@ -45,7 +45,16 @@ const recentOrders = [
 
 export default function DashboardScreen() {
   const navigate = useNavigate();
-  const { addToast }: any = useOutletContext();
+  const { addToast, metrics, orders, products, users }: any = useOutletContext();
+
+  const displayMetrics = metrics?.metrics || {
+    totalVentas: 0,
+    totalPedidos: 0,
+    totalUsuarios: 0,
+    totalProductos: 0
+  };
+
+  const chartData = metrics?.salesData || salesData;
 
   const handleExport = () => {
     addToast('Generando reporte de ventas...', 'info');
@@ -64,7 +73,7 @@ export default function DashboardScreen() {
         </div>
         <div className="flex gap-2">
           <span className="px-4 py-2 bg-surface-container-high text-xs font-bold text-primary rounded-lg border border-outline-variant/10">
-            Hoy: 24 Oct, 2023
+            Hoy: {new Date().toLocaleDateString()}
           </span>
         </div>
       </div>
@@ -73,7 +82,7 @@ export default function DashboardScreen() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard 
           title="Total Ventas" 
-          value="$4.320.000" 
+          value={`$${displayMetrics.totalVentas.toLocaleString()}`} 
           change="+12%" 
           subtitle="VS. MES PASADO" 
           icon={TrendingUp} 
@@ -82,7 +91,7 @@ export default function DashboardScreen() {
         />
         <KPICard 
           title="Pedidos Totales" 
-          value="128" 
+          value={displayMetrics.totalPedidos.toString()} 
           change="+5%" 
           subtitle="TRANSACCIONES EXITOSAS" 
           icon={ShoppingBasket} 
@@ -92,7 +101,7 @@ export default function DashboardScreen() {
         />
         <KPICard 
           title="Usuarios" 
-          value="87" 
+          value={displayMetrics.totalUsuarios.toString()} 
           change="+8%" 
           subtitle="NUEVOS ESTE MES" 
           icon={UserPlus} 
@@ -102,7 +111,7 @@ export default function DashboardScreen() {
         />
         <KPICard 
           title="Productos" 
-          value="42" 
+          value={displayMetrics.totalProductos.toString()} 
           change="Activos" 
           subtitle="EN INVENTARIO" 
           icon={Layers} 
@@ -133,7 +142,7 @@ export default function DashboardScreen() {
           
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={salesData}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="100%">
                     <stop offset="5%" stopColor="#4361ee" stopOpacity={0.3}/>
